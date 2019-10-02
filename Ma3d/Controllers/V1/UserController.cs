@@ -66,14 +66,15 @@ namespace Ma3d.Controllers.V1
             return encoder.Encode(u, secret);
         }
 
-        [HttpGet("test")]
-        public ActionResult<User> test()
+        [HttpGet("me")]
+        public ActionResult<User> me()
         {
             string token = Request.Headers["Authorization"];
 
             string[] bearer = token.Split(' ');
             if(bearer.Length == 2)
             {
+                if (bearer[0] == "Bearer") return StatusCode(401);
                 token = bearer[1];
 
                 IJsonSerializer serializer = new JsonNetSerializer();
@@ -82,11 +83,11 @@ namespace Ma3d.Controllers.V1
                 IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
                 IJwtDecoder decoder = new JwtDecoder(serializer, validator, urlEncoder);
 
-                var json = JsonConvert.DeserializeObject<User>(decoder.Decode(token, secret, verify: true));
+                User json = JsonConvert.DeserializeObject<User>(decoder.Decode(token, secret, verify: true));
                 return json;
             }
 
-            return null;
+            return StatusCode(401);
         }
     }
 }
