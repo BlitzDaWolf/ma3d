@@ -5,6 +5,7 @@ using Ma3d.Bearer;
 using Ma3d.Context;
 using Ma3d.Data;
 using Ma3d.DTO.V1;
+using Ma3d.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -15,11 +16,13 @@ namespace Ma3d.Controllers.V1
     public class UserController : ControllerBase
     {
         readonly UserContext UserContext;
+        UserBearer UserBearer;
 
         public UserController(UserContext context)
         {
             this.UserContext =
                 context;
+            UserBearer = new UserBearer(UserContext);
         }
 
         [HttpPost("register")]
@@ -41,8 +44,6 @@ namespace Ma3d.Controllers.V1
             return Ok();
         }
 
-        const string secret = "GQDstcKsx0NHjPOuXOYg5MbeJ1XT0uFiwDVvVBrk";
-
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login()
         {
@@ -57,20 +58,28 @@ namespace Ma3d.Controllers.V1
         }
 
         [HttpGet("me")]
-        public ActionResult<User> me()
+        public ActionResult<User> Me()
         {
-            string token = Request.Headers["Authorization"];
-
-            string[] bearer = token.Split(' ');
-            if(bearer.Length == 2)
+            try
             {
-                if (bearer[0] != "Bearer") return StatusCode(401);
-                token = bearer[1];
-
-                return UserBearer.GetUser(token);
+                User u = UserBearer.GetUser(Request);
+                return u;
             }
+            catch (AuthorizationException e)
+            {
+                return StatusCode(401, e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(401, e);
+            }
+        }
 
-            return StatusCode(401);
+        public ActionResult Update()
+        {
+
+
+            return Ok();
         }
     }
 }
